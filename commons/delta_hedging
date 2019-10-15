@@ -1,0 +1,5 @@
+
+
+T = 5;
+r = 0.01; """interest rate"""
+mu = 0.15; """drift term"""
