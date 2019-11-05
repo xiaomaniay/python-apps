@@ -10,18 +10,21 @@ import pandas as pd
 from pandas_datareader import data as pdr
 import fix_yahoo_finance as yf
 
+
 # Obtain a database connection to the MySQL instance
-db_host = 'localhost'
-db_user = 'sec_user'
-db_pass = '0521Test'
-db_name = 'securities_master'
-con = mysql.connector.connect(host=db_host, user=db_user, passwd=db_pass, db=db_name)
+def get_con():
+    db_host = 'localhost'
+    db_user = 'sec_user'
+    db_pass = '0521Test'
+    db_name = 'securities_master'
+    return mysql.connector.connect(host=db_host, user=db_user, passwd=db_pass, db=db_name)
 
 
 def obtain_list_of_db_tickers():
     """Obtains a list of the ticker symbols in the database."""
 
     try:
+        con = get_con()
         cur = con.cursor()
         cur.execute("SELECT id, ticker FROM symbol")
         data = cur.fetchall()
@@ -29,12 +32,12 @@ def obtain_list_of_db_tickers():
     except mysql.connector.Error as error:
         con.rollback()
         print('Failed to select id from symbol {}'.format(error))
-    finally:
-        # closing database connection.
-        if con.is_connected():
-            cur.close()
-            con.close()
-            print("MySQL connection is closed")
+    # finally:
+    #     # closing database connection.
+    #     if con.is_connected():
+    #         cur.close()
+    #         con.close()
+    #         print("MySQL connection is closed")
 
 
 def get_daily_historic_data_yahoo(ticker,
@@ -90,6 +93,9 @@ def insert_daily_data_into_db(data_vendor_id, symbol_id, daily_data):
     now = datetime.datetime.utcnow()
 
     # Convert Dataframe to List
+    daily_data.reset_index(inplace=True)
+    daily_data.dropna(inplace=True)
+    print(daily_data.isnull().values.any())
     daily_data = daily_data.values.tolist()
 
     # Amend the data to include the vendor ID and symbol ID
@@ -105,9 +111,10 @@ def insert_daily_data_into_db(data_vendor_id, symbol_id, daily_data):
     # Using the MySQL connection, carry out an INSERT INTO for every symbol
 
     try:
+        con = get_con()
         cur = con.cursor()
         cur.executemany(final_str, daily_data)
-        con.commit()
+        # con.commit()
         print("Record inserted successfully into the table")
     except mysql.connector.Error as error:
         con.rollback()
@@ -124,7 +131,9 @@ if __name__ == "__main__":
     # Loop over the tickers and insert the daily historical
     # data into the database
     tickers = obtain_list_of_db_tickers()
+    failed_tickers = []
     for t in tickers:
         print("Adding data for %s" % t[1])
         yf_data = get_daily_historic_data_yahoo(t[1])
         insert_daily_data_into_db('1', t[0], yf_data)
+    print(failed_tickers)
