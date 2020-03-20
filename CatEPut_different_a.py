@@ -25,12 +25,18 @@ def cateput_formula(S0, lambd, K, l, A, r, T, sigma):
     return price
 
 
+@np.vectorize
+def price_diff(price1, price2):
+    if not price2:
+        return 0
+    return (price1 - price2) / price2
+
 
 if __name__ == "__main__":
     start_time = time.time()
     print(start_time)
     K = 60
-    S0 = np.linspace(50, 70, 21)
+    S0 = np.linspace(20, 80, 41)
     lambd = np.linspace(0.1, 2, 20)
     l = 1
     A1 = 0.02
@@ -43,28 +49,14 @@ if __name__ == "__main__":
     xx, yy = np.meshgrid(S0, lambd)
     zz1 = np.array(cateput_formula(xx, yy, K, l, A1, r, T, sigma))
     zz2 = np.array(cateput_formula(xx, yy, K, l, A2, r, T, sigma))
+    zz3 = np.array(price_diff(zz2, zz1))
 
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.plot_surface(xx, yy, zz1, cmap=cm.autumn, linewidth=0, antialiased=False)
-    # ax.plot_surface(xx, yy, zz2, cmap=cm.winter, linewidth=0, antialiased=False)
-    #
-    # ax.xaxis.set_rotate_label(False)  # disable automatic rotation
-    # ax.yaxis.set_rotate_label(False)  # disable automatic rotation
-    # ax.zaxis.set_rotate_label(False)  # disable automatic rotation
-    # ax.set_xlabel('$S_0$', rotation='horizontal')
-    # ax.set_ylabel('$\lambda$', rotation='horizontal')
-    # ax.set_zlabel('CatEPut \n Price', rotation='horizontal')
-    # ax.xaxis.set_major_locator(MultipleLocator(10))
-    # ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    # # ax.legend()
-    # plt.show()
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    fig = plt.figure(figsize=plt.figaspect(0.5))
+    ax = fig.add_subplot(1, 2, 1, projection='3d')
     ax.plot_surface(xx, yy, zz1, cmap=cm.autumn, linewidth=0, antialiased=False)
     ax.plot_surface(xx, yy, zz2, cmap=cm.winter, linewidth=0, antialiased=False)
 
+    ax.set_title('Lower Surface A = 0.02    Upper Surface A = 0.2')
     ax.xaxis.set_rotate_label(False)  # disable automatic rotation
     ax.yaxis.set_rotate_label(False)  # disable automatic rotation
     ax.zaxis.set_rotate_label(False)  # disable automatic rotation
@@ -73,7 +65,21 @@ if __name__ == "__main__":
     ax.set_zlabel('CatEPut \n Price', rotation='horizontal')
     ax.xaxis.set_major_locator(MultipleLocator(10))
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
+    ax.zaxis.set_major_locator(MultipleLocator(10))
+    ax.set_zlim(0, 40)
 
+    ax = fig.add_subplot(1, 2, 2, projection='3d')
+    ax.plot_surface(xx, yy, zz3, cmap=cm.winter, linewidth=0, antialiased=False)
+
+    ax.set_title('Price Difference')
+    ax.xaxis.set_rotate_label(False)  # disable automatic rotation
+    ax.yaxis.set_rotate_label(False)  # disable automatic rotation
+    ax.zaxis.set_rotate_label(False)  # disable automatic rotation
+    ax.set_xlabel('$S_0$', rotation='horizontal')
+    ax.set_ylabel('$\lambda$', rotation='horizontal')
+    ax.xaxis.set_major_locator(MultipleLocator(10))
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
+    ax.zaxis.set_major_formatter(PercentFormatter(decimals=2))
 
     plt.show()
 
